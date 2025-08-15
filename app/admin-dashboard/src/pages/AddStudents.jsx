@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/table";
 import { Users, UserCheck, UserPlus, Edit, Trash2 } from "lucide-react";
 
+// React Toastify
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 export default function AddStudents() {
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -82,30 +86,7 @@ export default function AddStudents() {
   const activeStudents = students.filter((s) => s.status === "Active").length;
   const totalParents = new Set(students.map((s) => s.parent_id)).size;
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this student?")) {
-      setStudents(students.filter((s) => s.user_id !== id));
-    }
-  };
-
-  const handleEdit = (student) => {
-    setFormData(student);
-    setIsEditing(true);
-    setOpen(true);
-  };
-
-  const handleSave = () => {
-    if (isEditing) {
-      setStudents(
-        students.map((s) => (s.user_id === formData.user_id ? formData : s))
-      );
-    } else {
-      setStudents([
-        ...students,
-        { ...formData, user_id: Date.now(), isExpired: false },
-      ]);
-    }
-    setOpen(false);
+  const resetForm = () => {
     setFormData({
       user_id: null,
       name: "",
@@ -119,6 +100,45 @@ export default function AddStudents() {
       status: "",
       validity: "",
     });
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this student?")) {
+      setStudents(students.filter((s) => s.user_id !== id));
+      toast.success("Student deleted successfully!");
+    } else {
+
+      toast.error("Failed to delete student.");
+    }
+  };
+
+  const handleEdit = (student) => {
+    setFormData(student);
+    setIsEditing(true);
+    setOpen(true);
+  };
+
+  const handleSave = () => {
+    if (!formData.name || !formData.roll || !formData.status) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (isEditing) {
+      setStudents(
+        students.map((s) => (s.user_id === formData.user_id ? formData : s))
+      );
+      toast.success("Student updated successfully!");
+    } else {
+      setStudents([
+        ...students,
+        { ...formData, user_id: Date.now(), isExpired: false },
+      ]);
+      toast.success("Student added successfully!");
+    }
+
+    setOpen(false);
+    resetForm();
     setIsEditing(false);
   };
 
@@ -137,19 +157,7 @@ export default function AddStudents() {
             <Button
               className="bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
-                setFormData({
-                  user_id: null,
-                  name: "",
-                  roll: "",
-                  parent_name: "",
-                  parent_phone: "",
-                  bus_no: "",
-                  return_bus_no: "",
-                  phone: "",
-                  stop: "",
-                  status: "",
-                  validity: "",
-                });
+                resetForm();
                 setIsEditing(false);
               }}
             >
@@ -321,48 +329,48 @@ export default function AddStudents() {
       </div>
 
       {/* Students Table */}
+      {/* Students Table */}
       <Card>
-        <CardContent>
-          <Table>
+        <CardContent className="p-4">
+          <Table className="border border-gray-200">
             <TableHeader>
               <TableRow className="bg-gray-100">
-                <TableHead>Name</TableHead>
-                <TableHead>Roll No</TableHead>
-                <TableHead>Parent Name</TableHead>
-                <TableHead>Parent Phone</TableHead>
-                <TableHead>Bus No</TableHead>
-                <TableHead>Return Bus No</TableHead>
-                <TableHead>Phone No</TableHead>
-                <TableHead>Bus Stop</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Validity</TableHead>
-                <TableHead>Expired</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="py-3 px-4">Name</TableHead>
+                <TableHead className="py-3 px-4">Roll No</TableHead>
+                <TableHead className="py-3 px-4">Parent Name</TableHead>
+                <TableHead className="py-3 px-4">Parent Phone</TableHead>
+                <TableHead className="py-3 px-4">Bus No</TableHead>
+                <TableHead className="py-3 px-4">Return Bus No</TableHead>
+                <TableHead className="py-3 px-4">Phone No</TableHead>
+                <TableHead className="py-3 px-4">Bus Stop</TableHead>
+                <TableHead className="py-3 px-4">Status</TableHead>
+                <TableHead className="py-3 px-4">Validity</TableHead>
+                <TableHead className="py-3 px-4">Expired</TableHead>
+                <TableHead className="py-3 px-4 text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {students.map((s) => (
-                <TableRow key={s.user_id}>
-                  <TableCell>{s.name}</TableCell>
-                  <TableCell>{s.roll}</TableCell>
-                  <TableCell>{s.parent_name}</TableCell>
-                  <TableCell>{s.parent_phone}</TableCell>
-                  <TableCell>{s.bus_no}</TableCell>
-                  <TableCell>{s.return_bus_no}</TableCell>
-                  <TableCell>{s.phone}</TableCell>
-                  <TableCell>{s.stop}</TableCell>
+                <TableRow key={s.user_id} className="border-t border-gray-200">
+                  <TableCell className="py-3 px-4">{s.name}</TableCell>
+                  <TableCell className="py-3 px-4">{s.roll}</TableCell>
+                  <TableCell className="py-3 px-4">{s.parent_name}</TableCell>
+                  <TableCell className="py-3 px-4">{s.parent_phone}</TableCell>
+                  <TableCell className="py-3 px-4">{s.bus_no}</TableCell>
+                  <TableCell className="py-3 px-4">{s.return_bus_no}</TableCell>
+                  <TableCell className="py-3 px-4">{s.phone}</TableCell>
+                  <TableCell className="py-3 px-4">{s.stop}</TableCell>
                   <TableCell
-                    className={
-                      s.status === "Active"
-                        ? "text-green-600 font-semibold"
-                        : "text-red-600 font-semibold"
-                    }
+                    className={`py-3 px-4 font-semibold ${s.status === "Active" ? "text-green-600" : "text-red-600"
+                      }`}
                   >
                     {s.status}
                   </TableCell>
-                  <TableCell>{s.validity}</TableCell>
-                  <TableCell>{s.isExpired ? "Yes" : "No"}</TableCell>
-                  <TableCell className="flex gap-2">
+                  <TableCell className="py-3 px-4">{s.validity}</TableCell>
+                  <TableCell className="py-3 px-4">
+                    {s.isExpired ? "Yes" : "No"}
+                  </TableCell>
+                  <TableCell className="py-3 px-4 flex justify-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
@@ -384,6 +392,7 @@ export default function AddStudents() {
           </Table>
         </CardContent>
       </Card>
+
     </div>
   );
 }
