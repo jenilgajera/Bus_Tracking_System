@@ -4,8 +4,10 @@ import React from "react";
 import Dashboard from "@/pages/Dashboard";
 import AddStudents from "@/pages/AddStudents";
 import Home from "@/pages/Home";
-// import Buses from "@/pages/Buses";
-// import Drivers from "@/pages/Drivers";
+import BusesManagement from "@/pages/BusesManagement";
+import AddDrivers from "@/pages/AddDrivers";
+import LiveBusMap from "@/pages/LiveBusMap";
+import ComplaintsManagement from "@/pages/ComplaintsManagement";
 
 const AppRoutes = () => {
   return (
@@ -15,10 +17,12 @@ const AppRoutes = () => {
 
       {/* Dashboard Layout with Outlet */}
       <Route path="/" element={<Dashboard />}>
-        <Route index element={<Home/>} />
+        <Route index element={<Home />} />
         <Route path="addstudents" element={<AddStudents />} />
-        {/* <Route path="buses" element={<Buses />} /> */}
-        {/* <Route path="drivers" element={<Drivers />} /> */}
+        <Route path="addbuses" element={<BusesManagement />} />
+        <Route path="adddrivers" element={<AddDrivers />} />
+        <Route path="livebusmap" element={<LiveBusMap />} />
+        <Route path="complaintmanagement" element={<ComplaintsManagement />} />
       </Route>
     </Routes>
   );

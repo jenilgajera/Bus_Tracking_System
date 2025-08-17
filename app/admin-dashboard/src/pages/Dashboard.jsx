@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useLocation } from "react-router-dom";
 
 // Card component for dashboard stats
 const StatCard = ({ title, value, description, icon }) => {
@@ -42,6 +43,19 @@ const StatCard = ({ title, value, description, icon }) => {
 };
 
 const Dashboard = () => {
+   const location = useLocation();
+
+  // Map route paths to breadcrumb names
+  const pageTitles = {
+    "/": "Home",
+    "/addstudents": "Add Students",
+    "/buses": "Buses Management",
+    "/drivers": "Drivers Management",
+    "/login": "Login",
+  };
+  const currentPage =
+    pageTitles[location.pathname] ||
+    location.pathname.replace("/", "").replace(/-/g, " ") || "Home";
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -61,7 +75,7 @@ const Dashboard = () => {
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Overview</BreadcrumbPage>
+                  <BreadcrumbPage>{currentPage}</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
