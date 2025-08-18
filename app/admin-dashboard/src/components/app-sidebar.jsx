@@ -12,6 +12,7 @@ import {
   Settings2,
   SquareTerminal,
   Users,
+  Bus,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -44,29 +45,94 @@ export function AppSidebar(props) {
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
+              `group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
               }`
             }
           >
-            <SquareTerminal size={18} />
-            Dashboard
+            <SquareTerminal size={18} className="shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">
+              Dashboard
+            </span>
           </NavLink>
 
           <NavLink
             to="/addstudents"
             className={({ isActive }) =>
-              `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium ${
+              `group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
               }`
             }
           >
-            <Users size={18} />
-            Students
+            <Users size={18} className="shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">
+              Students
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/addbuses"
+            className={({ isActive }) =>
+              `group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`
+            }
+          >
+            <Bus size={18} className="shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">Buses</span>
+          </NavLink>
+          <NavLink
+            to="/adddrivers"
+            className={({ isActive }) =>
+              `group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`
+            }
+          >
+            <Bus size={18} className="shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">
+              AddDrivers
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/complaintmanagement"
+            className={({ isActive }) =>
+              `group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`
+            }
+          >
+            <BookOpen size={18} className="shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">
+              Complaint Management
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/livebusmap"
+            className={({ isActive }) =>
+              `group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              }`
+            }
+          >
+            <Map size={18} className="shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">
+              Live Bus Map
+            </span>
           </NavLink>
         </nav>
 
