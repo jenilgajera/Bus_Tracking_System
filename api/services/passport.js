@@ -1,37 +1,63 @@
+// config/passport.js
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const user_model = require("../models/user_model");
+
+const User = require("../models/user_model"); // your model
 
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback",
+      // MUST match Google console + your routes:
+      callbackURL: `${process.env.SERVER_URL}/v1/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        let user = await user_model.findOne({ googleId: profile.id });
+        // try existing by googleId
+        let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-          const existingEmailUser = await user_model.findOne({ email: profile.emails[0].value });
-          if (existingEmailUser) {
-            existingEmailUser.googleId = profile.id;
-            await existingEmailUser.save();
-            user = existingEmailUser;
+          const email = profile.emails?.[0]?.value;
+
+          // link to existing email account if found
+          if (email) {
+            const existing = await User.findOne({ email });
+            if (existing) {
+              existing.googleId = profile.id;
+              if (!existing.name) existing.name = profile.displayName;
+              await existing.save();
+              user = existing;
+            } else {
+              // create new user
+              user = await User.create({
+                googleId: profile.id,
+                name: profile.displayName,
+                email,
+                role: "student",
+                status: "active",
+                password: "", 
+              });
+            }
           } else {
-            user = await user_model.create({
+    
+            user = await User.create({
               googleId: profile.id,
               name: profile.displayName,
-              email: profile.emails[0].value,
               role: "student",
+              status: "active",
+              password: "",
             });
           }
         }
-        done(null, user);
+
+        return done(null, user);
       } catch (err) {
-        done(err, null);
+        return done(err, null);
       }
     }
   )
 );
+
+// (no sessions used, so serialize/deserialize not strictly needed)
+module.exports = passport;

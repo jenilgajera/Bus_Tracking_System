@@ -13,10 +13,14 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
+      unique: true,
     },
     password: {
       type: String,
-      required: true,
+      required: function () {
+        // Password only required if googleId is not present
+        return !this.googleId;
+      },
     },
     role: {
       type: String,
