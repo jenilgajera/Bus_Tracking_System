@@ -8,6 +8,8 @@ import BusesManagement from "@/pages/BusesManagement";
 import AddDrivers from "@/pages/AddDrivers";
 import LiveBusMap from "@/pages/LiveBusMap";
 import ComplaintsManagement from "@/pages/ComplaintsManagement";
+import Settings from "@/pages/Settings";
+import ReportsAnalytics from "@/pages/ReportsAnalytics";
 
 const AppRoutes = () => {
   return (
@@ -23,6 +25,8 @@ const AppRoutes = () => {
         <Route path="adddrivers" element={<AddDrivers />} />
         <Route path="livebusmap" element={<LiveBusMap />} />
         <Route path="complaintmanagement" element={<ComplaintsManagement />} />
+        <Route path="settings" element={<Settings />} />
+        <Route path="reportanalysis" element={<ReportsAnalytics />} />
       </Route>
     </Routes>
   );
