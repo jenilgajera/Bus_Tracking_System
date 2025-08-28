@@ -2,7 +2,7 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
-const User = require("../models/user_model"); // your model
+const UserModel = require("../models/user.model"); // your model
 
 passport.use(
   new GoogleStrategy(
@@ -15,14 +15,14 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         // try existing by googleId
-        let user = await User.findOne({ googleId: profile.id });
+        let user = await UserModel.findOne({ googleId: profile.id });
 
         if (!user) {
           const email = profile.emails?.[0]?.value;
 
           // link to existing email account if found
           if (email) {
-            const existing = await User.findOne({ email });
+            const existing = await UserModel.findOne({ email });
             if (existing) {
               existing.googleId = profile.id;
               if (!existing.name) existing.name = profile.displayName;
@@ -30,7 +30,7 @@ passport.use(
               user = existing;
             } else {
               // create new user
-              user = await User.create({
+              user = await UserModel.create({
                 googleId: profile.id,
                 name: profile.displayName,
                 email,
@@ -41,7 +41,7 @@ passport.use(
             }
           } else {
     
-            user = await User.create({
+            user = await UserModel.create({
               googleId: profile.id,
               name: profile.displayName,
               role: "student",

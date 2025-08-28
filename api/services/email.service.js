@@ -1,7 +1,10 @@
-require("dotenv").config();
 const nodemailer = require("nodemailer");
 const jwtService = require("./jwt.service");
-
+const {
+  CORS_URL,
+  ACTIVATION_PATH,
+  RESET_PASSWORD_PATH,
+} = require("../constants/constant");
 const sendActivationEmail = async (user) => {
   try {
     // Generate the activation token
@@ -11,7 +14,7 @@ const sendActivationEmail = async (user) => {
       "1d"
     );
 
-    const activationLink = `http://localhost:3010/v1/auth/activate-account?token=${activationToken}`;
+    const activationLink = `${CORS_URL.SERVER_URL}${ACTIVATION_PATH}?token=${activationToken}`;
 
     // Create the transporter
     const transporter = nodemailer.createTransport({
@@ -79,7 +82,7 @@ const sendResetPasswordEmail = async (user) => {
       "1h"
     );
 
-    const resetLink = `http://localhost:5173/reset-password/${user._id}/${resetToken}`;
+    const resetLink = `${CORS_URL.CLIENT_URL}${RESET_PASSWORD_PATH}/${user._id}/${resetToken}`;
 
     // Create transporter
     const transporter = nodemailer.createTransport({

@@ -12,7 +12,7 @@ exports.authMiddleware = async (req, res, next) => {
     const decode = jwtService.verifyToken(token);
 
     const user = await user_model.findById(decode.id);
-
+nodemon 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }

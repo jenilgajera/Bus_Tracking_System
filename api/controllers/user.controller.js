@@ -1,26 +1,48 @@
 const express = require("express");
 const jwtService = require("../services/jwt.service");
 const bcrypt = require("bcrypt");
-const user_model = require("../models/user_model");
+const UserModel = require("../models/user.model");
 const {
   sendActivationEmail,
   sendResetPasswordEmail,
 } = require("../services/email.service");
 
+const { createResponse } = require("../helpers/response.helper");
+
+const {
+  STATUS,
+  MESSAGES,
+  USER_MESSAGES,
+  USER_STATUS,
+} = require("../constants/constant");
+
 const userContoller = {
-  signUp: async (req, res) => {
+  /**
+   * @route POST  - /api/v1/public/auth/register
+   * @group auth
+   * @desc created user
+   */
+  signUp: async (req, res, next) => {
     try {
       const { email, password, role } = req.body;
 
       if (!email || !password) {
-        return res
-          .status(400)
-          .json({ message: "Email and password are required" });
+        return createResponse(
+          res,
+          false,
+          STATUS.BAD_REQUEST,
+          MESSAGES.FILEDS_REQUIRED
+        );
       }
 
-      const userfind = await user_model.findOne({ email });
+      const userfind = await UserModel.findOne({ email });
       if (userfind) {
-        return res.status(409).json({ message: "User already exists" });
+        return createResponse(
+          res,
+          false,
+          STATUS.CONFLICT,
+          USER_MESSAGES.EMAIL_EXISTS
+        );
       }
 
       const hashPassword = await bcrypt.hash(password, 10);
@@ -29,94 +51,147 @@ const userContoller = {
         email,
         password: hashPassword,
         role,
-        status: "inactive",
+        status: USER_STATUS.Inactive,
       };
 
-      const createUser = await user_model.create(newUser);
+      const createUser = await UserModel.create(newUser);
 
       const emailSent = await sendActivationEmail(createUser);
       if (!emailSent) {
-        return res.status(500).json({ message: "Activation email not sent" });
+        return createResponse(
+          res,
+          false,
+          STATUS.INTERNAL_ERROR,
+          USER_MESSAGES.ACTIVATION_EMAIL_FAIL
+        );
       }
-      return res.status(201).json({
-        message:
-          "User created successfully, please check your email to activate your account.",
-        user: createUser,
-      });
+
+      return createResponse(
+        res,
+        true,
+        STATUS.CREATED,
+        USER_MESSAGES.REGISTER_SUCCESS,
+        { email: createUser.email }
+      );
     } catch (error) {
-      console.error("Signup Error:", error);
-      res
-        .status(500)
-        .json({ message: "User not created", error: error.message });
+      next(error);
     }
   },
+  /**
+   * @route POST  - /api/v1/public/auth/login
+   * @group auth
+   * @desc login user
+   */
   signIn: async (req, res) => {
     try {
       const { email, password } = req.body;
 
-      const user = await user_model.findOne({ email });
+      const user = await UserModel.findOne({ email });
       if (!user || !user.password) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        return createResponse(
+          res,
+          false,
+          STATUS.BAD_REQUEST,
+          USER_MESSAGES.INVALID_CREDENTIALS
+        );
       }
-      if (user.status !== "active") {
-        return res.status(403).json({
-          message: "Please activate your account via email before logging in.",
-        });
+      if (user.status !== USER_STATUS.ACTIVE) {
+        return createResponse(
+          res,
+          false,
+          STATUS.FORBIDDEN,
+          USER_MESSAGES.ACCOUNT_NOT_ACTIVE
+        );
       }
 
       const comparePassword = await bcrypt.compare(password, user.password);
       if (!comparePassword) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        return createResponse(
+          res,
+          false,
+          STATUS.BAD_REQUEST,
+          USER_MESSAGES.INVALID_CREDENTIALS
+        );
       }
-
+      const usertoken = {
+        email: user.email,
+        id: user._id,
+        role: user.role,
+      };
       const token = jwtService.generateToken(
-        {
-          email: user.email,
-          id: user._id,
-          role: user.role,
-        },
+        usertoken,
         process.env.JWT_EXPIRES_IN
       );
 
       res.cookie("Token", token, { signed: true });
-      res.status(200).json({
-        message: "User logged in successfully",
-        user: { email },
-      });
+
+      return createResponse(
+        res,
+        true,
+        STATUS.SUCCESS,
+        USER_MESSAGES.LOGIN_SUCCESS,
+        { email }
+      );
     } catch (error) {
-      console.error("SignIn Error:", error);
-      res.status(500).json({ message: error.message });
+      next(error);
     }
   },
+  /**
+   * @route GET  - /api/v1/public/auth/activate-account
+   * @group auth
+   * @desc activate user account
+   */
   ActiveAccount: async (req, res) => {
     const { token } = req.query;
 
     try {
       if (!token) {
-        res
-          .status(204)
-          .json({ message: "token is not valid please register Again" });
+        return createResponse(
+          res,
+          false,
+          STATUS.UNAUTHORIZED,
+          USER_MESSAGES.INVALID_CREDENTIALS
+        );
       }
       const decode = jwtService.verifyToken(token);
       const userId = decode.id;
       // Activate the user
-      const user = await user_model.findById(userId);
-      if (!user) return res.status(404).send("User not found.");
+      const user = await UserModel.findById(userId);
+      if (!user)
+        return createResponse(
+          res,
+          false,
+          STATUS.NOT_FOUND,
+          USER_MESSAGES.USER_NOT_FOUND
+        );
 
-      if (user.status === "active") {
-        return res.send("Account already activated.");
+      if (user.status === USER_STATUS.ACTIVE) {
+        return createResponse(
+          res,
+          true,
+          STATUS.SUCCESS,
+          USER_MESSAGES.ACCOUNT_ALREADY_ACTIVE
+        );
       }
 
-      user.status = "active";
+      user.status = USER_STATUS.ACTIVE;
       await user.save();
-      return res.send("Account successfully activated! You can now log in.");
+      return createResponse(
+        res,
+        true,
+        STATUS.SUCCESS,
+        USER_MESSAGES.ACCOUNT_ACTIVATED
+      );
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      next(error);
     }
   },
+  /**
+   * @route GET  - /api/v1/public/auth/google/callback
+   * @group auth
+   * @desc login or register user with Google
+   */
   GoogleLogin: async (req, res) => {
-    console.log("🚀 Google Login Success:", req.user); // Debug
-
     const newuser = {
       id: req.user._id,
       email: req.user.email,
@@ -130,59 +205,100 @@ const userContoller = {
       secure: false,
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
-
-    res.redirect("http://localhost:5173/");
+    return createResponse(
+      res,
+      true,
+      STATUS.SUCCESS,
+      USER_MESSAGES.LOGIN_SUCCESS,
+      { token, user: newuser }
+    );
   },
-  forgotPassword: async (req, res) => {
+  /**
+   * @route POST  - /api/v1/public/auth/forgot-password
+   * @group auth
+   * @desc send reset password email
+   */ forgotPassword: async (req, res) => {
     try {
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({ message: "Email is required" });
+        return createResponse(
+          res,
+          false,
+          STATUS.BAD_REQUEST,
+          MESSAGES.FILEDS_REQUIRED
+        );
       }
 
-      const user = await user_model.findOne({ email });
+      const user = await UserModel.findOne({ email });
       if (!user) {
         //don't show true exits or not for security purpose
-        return res.json({
-          message: "If the email exists, a reset link has been sent.",
-        });
+        return createResponse(
+          res,
+          true,
+          STATUS.SUCCESS,
+          USER_MESSAGES.RESET_EMAIL_SENT
+        );
       }
 
       const emailSent = await sendResetPasswordEmail(user);
       if (!emailSent) {
-        return res.status(500).json({ message: "Failed to send reset email" });
+        return createResponse(
+          res,
+          false,
+          STATUS.INTERNAL_ERROR,
+          USER_MESSAGES.RESET_EMAIL_FAIL
+        );
       }
-
-      return res.json({
-        message: "If the email exists, a reset link has been sent.",
-      });
+      return createResponse(
+        res,
+        true,
+        STATUS.SUCCESS,
+        USER_MESSAGES.RESET_EMAIL_SENT
+      );
     } catch (error) {
-      console.error("ForgotPassword Error:", error);
-      res.status(500).json({ message: "Server error" });
+      next(error);
     }
   },
+  /**
+   * @route PATCH  - /api/v1/public/auth/reset-password/:id/:token
+   * @group auth
+   * @desc reset user password
+   */
   resetPassword: async (req, res) => {
     try {
       const { id, token } = req.params;
       const { newPassword } = req.body;
 
       if (!id || !token || !newPassword) {
-        return res
-          .status(400)
-          .json({ message: "Id, token, and new password are required" });
+        return createResponse(
+          res,
+          false,
+          STATUS.BAD_REQUEST,
+          MESSAGES.FILEDS_REQUIRED
+        );
       }
 
       // Verify token
       const decoded = jwtService.verifyToken(token);
       if (!decoded || decoded.id !== id) {
-        return res.status(400).json({ message: "Invalid or expired token" });
+        return createResponse(
+          res,
+          false,
+          STATUS.BAD_REQUEST,
+          USER_MESSAGES.TOKEN_INVALID
+        );
       }
 
       // Find user
-      const user = await user_model.findById(id);
+      const user = await UserModel.findById(id);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return createResponse(
+          res,
+          false,
+          STATUS.NOT_FOUND,
+          USER_MESSAGES.USER_NOT_FOUND
+        );
       }
 
       // Hash new password
@@ -190,12 +306,15 @@ const userContoller = {
       user.password = hashedPassword;
       await user.save();
 
-      return res
-        .status(200)
-        .json({ message: "Password reset successful", user });
+      return createResponse(
+        res,
+        true,
+        STATUS.SUCCESS,
+        USER_MESSAGES.PASSWORD_RESET_SUCCESS,
+        { id: user._id, email: user.email }
+      );
     } catch (error) {
-      console.error("ResetPassword Error:", error);
-      res.status(500).json({ message: "Server error" });
+      next(error);
     }
   },
 };
